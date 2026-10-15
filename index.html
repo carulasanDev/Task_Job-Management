@@ -1,0 +1,482 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f6f7f3">
+  <title>Job management</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #222821;
+      --muted: #737b72;
+      --line: #e5e9e1;
+      --paper: #f6f7f3;
+      --green: #4e8b63;
+      --green-soft: #e8f1e9;
+      --orange: #e69a54;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--paper); color: var(--ink); font-family: "DM Sans", sans-serif; }
+    button, input, select, textarea { font: inherit; }
+    button { cursor: pointer; }
+    .app-shell { min-height: 100vh; display: grid; grid-template-columns: 248px minmax(0, 1fr); }
+    .sidebar { background: #fff; border-right: 1px solid var(--line); padding: 27px 18px; display: flex; flex-direction: column; }
+    .brand { display: flex; align-items: center; gap: 11px; padding: 0 10px; font: 800 17px Manrope, sans-serif; letter-spacing: 0; }
+    .brand-mark { width: 32px; height: 32px; display: grid; place-items: center; border-radius: 10px; color: #fff; background: var(--green); }
+    .workspace-label { margin: 39px 10px 11px; color: #a0a69f; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0; }
+    .nav-link { width: 100%; display: flex; align-items: center; gap: 12px; border: 0; border-radius: 7px; padding: 11px 12px; color: #6a726a; background: transparent; text-align: left; font-size: 13px; font-weight: 600; transition: color .16s, background-color .16s, transform .16s; }
+    .nav-link .nav-count { margin-left: auto; color: #919990; font-size: 11px; }
+    .nav-link:hover { color: #356c46; background: #f4f7f3; }
+    .nav-link.active { color: #2f653f; background: #edf4ee; }
+    .nav-link.active:hover { background: #e5efe6; }
+    .nav-link.active .nav-count { color: #51805d; }
+    .nav-link:focus-visible { outline: 2px solid #77a283; outline-offset: 2px; }
+    .nav-link:active { transform: scale(.98); }
+    .sidebar-bottom { margin-top: auto; padding: 16px 11px 0; border-top: 1px solid var(--line); color: #858d84; font-size: 11px; line-height: 1.6; }
+    .main { min-width: 0; padding: 37px clamp(22px, 4vw, 58px) 48px; }
+    .topbar { display: flex; justify-content: space-between; align-items: center; gap: 20px; max-width: 1320px; margin: 0 auto; }
+    .eyebrow { color: #818a80; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0; }
+    h1 { margin: 8px 0 0; font: 700 clamp(24px, 3vw, 32px)/1.2 Manrope, sans-serif; letter-spacing: 0; }
+    .subheading { color: var(--muted); font-size: 13px; margin: 7px 0 0; }
+    .button-primary { display: inline-flex; align-items: center; justify-content: center; gap: 8px; border: 0; border-radius: 6px; padding: 11px 15px; color: white; background: #39774c; font-size: 12px; font-weight: 700; box-shadow: 0 2px 5px #2e68361c; transition: background .16s, transform .16s; }
+    .button-primary:hover { background: #2d6840; transform: translateY(-1px); }
+    .stats { max-width: 1320px; margin: 31px auto 33px; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border: 1px solid var(--line); border-radius: 8px; background: #fff; }
+    .stat { min-height: 94px; padding: 17px 20px; border-right: 1px solid var(--line); }
+    .stat:last-child { border-right: 0; }
+    .stat-label { display: flex; align-items: center; gap: 7px; color: #737c72; font-size: 11px; font-weight: 600; }
+    .stat-value { margin-top: 7px; font: 700 24px Manrope, sans-serif; }
+    .list-section { max-width: 1320px; margin: 0 auto; }
+    .section-heading { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-bottom: 16px; }
+    h2 { margin: 0; font: 700 17px Manrope, sans-serif; letter-spacing: 0; }
+    .job-total { margin-left: 8px; color: #8a9289; font: 500 12px "DM Sans", sans-serif; }
+    .toolbar { display: flex; gap: 9px; align-items: center; }
+    .search-wrap { position: relative; width: min(290px, 28vw); }
+    .search-wrap .lucide { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); color: #92998f; }
+    .control { min-height: 38px; border: 1px solid #dfe4dc; border-radius: 6px; color: #596258; background-color: #fff; font-size: 12px; outline: none; }
+    .control:focus { border-color: #77a283; box-shadow: 0 0 0 3px #4e8b631a; }
+    .search-input { width: 100%; padding: 0 11px 0 34px; }
+    .filter-select { min-width: 128px; padding: 0 30px 0 11px; }
+    .job-list { overflow: hidden; border: 1px solid var(--line); border-radius: 8px; background: #fff; }
+    .list-head, .job-row { display: grid; grid-template-columns: minmax(190px, 2.1fr) minmax(125px, 1fr) minmax(115px, .9fr) minmax(95px, .75fr) minmax(115px, .9fr) 82px; align-items: center; column-gap: 14px; }
+    .list-head { min-height: 42px; padding: 0 20px; color: #879087; background: #fbfcfa; border-bottom: 1px solid var(--line); font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0; }
+    .job-row { min-height: 83px; padding: 13px 20px; border-bottom: 1px solid #edf0eb; animation: arrive .22s ease-out both; }
+    .job-row:last-child { border-bottom: 0; }
+    .job-title { overflow-wrap: anywhere; font-size: 13px; font-weight: 700; }
+    .job-description { display: -webkit-box; overflow: hidden; margin-top: 4px; color: #848c83; font-size: 11px; line-height: 1.45; -webkit-line-clamp: 1; -webkit-box-orient: vertical; }
+    .assignee { display: flex; min-width: 0; align-items: center; gap: 8px; color: #545e53; font-size: 11px; font-weight: 600; }
+    .avatar { width: 27px; height: 27px; flex: 0 0 27px; display: grid; place-items: center; border-radius: 50%; color: #486753; background: #e8efe8; font-size: 9px; font-weight: 700; }
+    .assignee-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .due-date { color: #60695f; font-size: 11px; }
+    .due-date.overdue { color: #c05c4f; font-weight: 700; }
+    .badge { display: inline-flex; align-items: center; width: fit-content; min-height: 23px; padding: 3px 8px; border-radius: 20px; font-size: 10px; font-weight: 700; white-space: nowrap; }
+    .priority-low { color: #3f8052; background: #e9f3e9; }
+    .priority-medium { color: #a46b19; background: #fbf0d8; }
+    .priority-high { color: #b64f45; background: #fbe9e6; }
+    .status-todo { color: #667582; background: #edf1f4; }
+    .status-progress { color: #98691c; background: #fbf1dc; }
+    .status-complete { color: #3f8052; background: #e9f3e9; }
+    .row-actions { display: flex; justify-content: flex-end; align-items: center; gap: 2px; }
+    .icon-button { width: 31px; height: 31px; display: inline-grid; place-items: center; border: 0; border-radius: 5px; color: #7b847a; background: transparent; }
+    .icon-button:hover { color: #356c46; background: #f0f5ef; }
+    .icon-button.delete:hover { color: #b54b42; background: #fbefed; }
+    .note-count { margin-left: -5px; color: #7c857b; font-size: 10px; }
+    .empty-state { min-height: 260px; display: grid; place-items: center; padding: 35px 20px; text-align: center; }
+    .empty-inner { max-width: 330px; }
+    .empty-icon { width: 43px; height: 43px; display: grid; place-items: center; margin: 0 auto 12px; border-radius: 13px; color: #548360; background: #edf4ee; }
+    .empty-state h3 { margin: 0; font: 700 15px Manrope, sans-serif; }
+    .empty-state p { margin: 7px 0 16px; color: #7f887e; font-size: 12px; line-height: 1.5; }
+    .button-secondary { display: inline-flex; justify-content: center; align-items: center; gap: 7px; min-height: 36px; padding: 0 12px; border: 1px solid #dfe4dc; border-radius: 6px; color: #526151; background: #fff; font-size: 11px; font-weight: 700; }
+    .button-secondary:hover { background: #f8faf7; }
+    dialog { width: min(560px, calc(100vw - 30px)); max-height: min(90vh, 820px); padding: 0; border: 1px solid #e4e8e1; border-radius: 10px; color: var(--ink); background: #fff; box-shadow: 0 24px 80px #18221930; }
+    dialog::backdrop { background: #1e271f69; backdrop-filter: blur(2px); }
+    .dialog-header { display: flex; justify-content: space-between; align-items: flex-start; padding: 21px 23px 16px; border-bottom: 1px solid var(--line); }
+    .dialog-header h2 { font-size: 18px; }
+    .dialog-header p { margin: 5px 0 0; color: var(--muted); font-size: 11px; }
+    .dialog-form { max-height: calc(90vh - 72px); overflow-y: auto; padding: 18px 23px 22px; }
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 13px; }
+    .field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+    .field.full { grid-column: 1 / -1; }
+    .field label { color: #505a50; font-size: 11px; font-weight: 700; }
+    .field input, .field select, .field textarea { width: 100%; min-height: 38px; padding: 9px 10px; border: 1px solid #dfe4dc; border-radius: 5px; color: var(--ink); background: #fff; font-size: 12px; outline: none; }
+    .field textarea { min-height: 76px; resize: vertical; line-height: 1.5; }
+    .field input:focus, .field select:focus, .field textarea:focus { border-color: #77a283; box-shadow: 0 0 0 3px #4e8b631a; }
+    .notes-history { display: grid; gap: 8px; max-height: 142px; overflow-y: auto; padding: 10px; border: 1px solid var(--line); border-radius: 5px; background: #fafbf9; }
+    .note-entry { color: #5e685d; font-size: 11px; line-height: 1.5; }
+    .note-entry time { display: block; margin-bottom: 2px; color: #929a90; font-size: 9px; }
+    .dialog-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px; }
+    .toast { position: fixed; right: 24px; bottom: 24px; z-index: 5; display: flex; align-items: center; gap: 9px; max-width: min(390px, calc(100vw - 32px)); padding: 12px 15px; border: 1px solid #dce7db; border-radius: 6px; color: #345d3c; background: #fff; box-shadow: 0 8px 28px #2028201c; font-size: 12px; animation: arrive .18s ease-out; }
+    .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; }
+    @keyframes arrive { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+    @media (max-width: 960px) {
+      .app-shell { grid-template-columns: 205px minmax(0, 1fr); }
+      .list-head, .job-row { grid-template-columns: minmax(160px, 1.7fr) minmax(100px, 1fr) minmax(90px, .8fr) minmax(83px, .7fr) minmax(102px, .85fr) 76px; column-gap: 9px; }
+      .list-head, .job-row { padding-left: 14px; padding-right: 14px; }
+    }
+    @media (max-width: 760px) {
+      .app-shell { display: block; }
+      .sidebar { height: auto; padding: 13px 17px; border-right: 0; border-bottom: 1px solid var(--line); }
+      .brand { padding: 0; }
+      .workspace-label, .sidebar-bottom { display: none; }
+      .sidebar nav { display: flex; gap: 5px; margin-top: 12px; }
+      .nav-link { width: auto; padding: 8px 10px; font-size: 11px; }
+      .nav-link .nav-count { display: none; }
+      .main { padding: 27px 19px 40px; }
+      .stats { margin: 24px auto 28px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .stat { min-height: 78px; padding: 13px 15px; }
+      .stat:nth-child(2) { border-right: 0; }
+      .stat:nth-child(-n+2) { border-bottom: 1px solid var(--line); }
+      .stat-value { font-size: 21px; }
+      .section-heading { align-items: flex-start; flex-direction: column; }
+      .toolbar { width: 100%; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+      .search-wrap { width: 100%; grid-column: 1 / -1; }
+      .filter-select { width: 100%; min-width: 0; }
+      .list-head { display: none; }
+      .job-list { border: 0; background: transparent; overflow: visible; }
+      .job-row { grid-template-columns: minmax(0, 1fr) auto; row-gap: 13px; column-gap: 9px; margin-bottom: 9px; padding: 14px; border: 1px solid var(--line); border-radius: 7px; background: white; }
+      .job-main { grid-column: 1 / -1; }
+      .job-row .assignee { grid-column: 1; }
+      .job-row .due-date { grid-column: 2; justify-self: end; }
+      .job-row .priority-cell { grid-column: 1; }
+      .job-row .status-cell { grid-column: 2; justify-self: end; }
+      .job-row .row-actions { grid-column: 1 / -1; justify-content: flex-end; padding-top: 7px; border-top: 1px solid #edf0eb; }
+      .empty-state { border: 1px solid var(--line); border-radius: 7px; background: #fff; }
+    }
+    @media (max-width: 420px) {
+      .main { padding-right: 14px; padding-left: 14px; }
+      .topbar { align-items: flex-start; }
+      .topbar > .button-primary { padding: 10px 11px; font-size: 11px; white-space: nowrap; }
+      .topbar > .button-primary .lucide { width: 15px; }
+      .eyebrow { font-size: 10px; }
+      .subheading { font-size: 12px; }
+      .form-grid { grid-template-columns: 1fr; }
+      .field.full { grid-column: auto; }
+      .dialog-header { padding: 18px 17px 14px; }
+      .dialog-form { padding: 16px 17px 19px; }
+    }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; transition-duration: .01ms !important; } }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" aria-label="Main navigation">
+      <div class="brand"><span class="brand-mark"><i data-lucide="layers-2" width="17" height="17"></i></span>Daily Task</div>
+      <div class="workspace-label">Workspace</div>
+      <nav>
+        <button class="nav-link active" type="button" id="overview-nav" aria-current="page"><i data-lucide="layout-dashboard" width="16" height="16"></i>Overview<span class="nav-count" id="nav-total">0</span></button>
+        <button class="nav-link" type="button" id="jobs-nav"><i data-lucide="list-todo" width="16" height="16"></i>All jobs</button>
+      </nav>
+      <div class="sidebar-bottom">A clearer view of the work ahead.<br>Jobs are saved on this device.</div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div>
+          <div class="eyebrow" id="today-label">YOUR WORKSPACE</div>
+          <h1>Job overview</h1>
+          <p class="subheading">Keep every moving piece in view.</p>
+        </div>
+        <button class="button-primary" id="add-job" type="button"><i data-lucide="plus" width="16" height="16"></i>New job</button>
+      </header>
+
+      <section class="stats" aria-label="Job summary">
+        <div class="stat"><div class="stat-label"><i data-lucide="briefcase-business" width="14" height="14"></i>All jobs</div><div class="stat-value" id="stat-all">0</div></div>
+        <div class="stat"><div class="stat-label"><i data-lucide="circle-dot" width="14" height="14"></i>To do</div><div class="stat-value" id="stat-todo">0</div></div>
+        <div class="stat"><div class="stat-label"><i data-lucide="loader-circle" width="14" height="14"></i>In progress</div><div class="stat-value" id="stat-progress">0</div></div>
+        <div class="stat"><div class="stat-label"><i data-lucide="circle-check" width="14" height="14"></i>Complete</div><div class="stat-value" id="stat-complete">0</div></div>
+      </section>
+
+      <section class="list-section" aria-labelledby="jobs-heading">
+        <div class="section-heading">
+          <h2 id="jobs-heading">All jobs <span class="job-total" id="visible-count"></span></h2>
+          <div class="toolbar">
+            <label class="search-wrap"><span class="sr-only">Search jobs</span><i data-lucide="search" width="15" height="15"></i><input class="control search-input" type="search" id="search-input" placeholder="Search jobs" autocomplete="off"></label>
+            <label><span class="sr-only">Filter by status</span><select class="control filter-select" id="status-filter"><option value="all">All statuses</option><option value="To Do">To Do</option><option value="In Progress">In Progress</option><option value="Complete">Complete</option></select></label>
+            <label><span class="sr-only">Filter by employee</span><select class="control filter-select" id="employee-filter"><option value="all">All employees</option></select></label>
+          </div>
+        </div>
+        <div class="job-list" id="job-list" aria-live="polite"></div>
+      </section>
+    </main>
+  </div>
+
+  <dialog id="job-dialog" aria-labelledby="dialog-title">
+    <div class="dialog-header">
+      <div><h2 id="dialog-title">New job</h2><p id="dialog-description">Add the details and keep the next step clear.</p></div>
+      <button class="icon-button" id="close-dialog" type="button" aria-label="Close dialog"><i data-lucide="x" width="17" height="17"></i></button>
+    </div>
+    <form class="dialog-form" id="job-form">
+      <input id="job-id" type="hidden">
+      <div class="form-grid">
+        <div class="field full"><label for="job-title-input">Job title <span aria-hidden="true">*</span></label><input id="job-title-input" name="title" required maxlength="120" placeholder="e.g. Prepare Q4 report"></div>
+        <div class="field full"><label for="job-description-input">Description / details</label><textarea id="job-description-input" name="description" maxlength="1000" placeholder="What needs to get done?"></textarea></div>
+        <div class="field"><label for="job-employee-input">Assigned employee</label><input id="job-employee-input" name="employee" maxlength="80" placeholder="e.g. Alex Morgan" list="employee-options"><datalist id="employee-options"></datalist></div>
+        <div class="field"><label for="job-due-input">Due date</label><input id="job-due-input" name="dueDate" type="date"></div>
+        <div class="field"><label for="job-priority-input">Priority</label><select id="job-priority-input" name="priority"><option>Low</option><option selected>Medium</option><option>High</option></select></div>
+        <div class="field"><label for="job-status-input">Status</label><select id="job-status-input" name="status"><option>To Do</option><option>In Progress</option><option>Complete</option></select></div>
+        <div class="field full" id="initial-note-field"><label for="job-note-input">Notes</label><textarea id="job-note-input" name="note" maxlength="1000" placeholder="Add an initial note (optional)"></textarea></div>
+        <div class="field full" id="notes-history-field" hidden><label>Note history</label><div class="notes-history" id="notes-history"></div><label for="job-note-edit-input">Add a note</label><textarea id="job-note-edit-input" maxlength="1000" placeholder="Write a note to add to this job..."></textarea></div>
+      </div>
+      <div class="dialog-actions"><button class="button-secondary" id="cancel-dialog" type="button">Cancel</button><button class="button-primary" id="save-job" type="submit">Create job</button></div>
+    </form>
+  </dialog>
+  <div id="toast-region" aria-live="polite" aria-atomic="true"></div>
+
+  <script>
+    (() => {
+      const STORAGE_KEY = "job_management_app_data";
+      const STATUSES = ["To Do", "In Progress", "Complete"];
+      const PRIORITIES = ["Low", "Medium", "High"];
+      const list = document.getElementById("job-list");
+      const dialog = document.getElementById("job-dialog");
+      const form = document.getElementById("job-form");
+      const searchInput = document.getElementById("search-input");
+      const statusFilter = document.getElementById("status-filter");
+      const employeeFilter = document.getElementById("employee-filter");
+      let jobs = loadJobs();
+      let toastTimer;
+
+      function loadJobs() {
+        try {
+          const stored = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+          return Array.isArray(stored) ? stored.filter(job => job && typeof job.id === "string" && typeof job.title === "string") : [];
+        } catch (error) {
+          return [];
+        }
+      }
+
+      function saveJobs() {
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(jobs));
+          return true;
+        } catch (error) {
+          showToast("Could not save changes to this browser.");
+          return false;
+        }
+      }
+
+      function escapeHTML(value) {
+        return String(value ?? "").replace(/[&<>"']/g, char => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[char]));
+      }
+
+      function initials(name) {
+        return String(name || "Unassigned").trim().split(/\s+/).slice(0, 2).map(part => part[0] || "").join("").toUpperCase() || "?";
+      }
+
+      function dateLabel(value) {
+        if (!value) return "No due date";
+        const parts = value.split("-").map(Number);
+        if (parts.length !== 3 || parts.some(Number.isNaN)) return "No due date";
+        return new Date(parts[0], parts[1] - 1, parts[2]).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+      }
+
+      function isOverdue(job) {
+        if (!job.dueDate || job.status === "Complete") return false;
+        const due = new Date(`${job.dueDate}T00:00:00`);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        return due < today;
+      }
+
+      function render() {
+        const query = searchInput.value.trim().toLowerCase();
+        const selectedStatus = statusFilter.value;
+        const selectedEmployee = employeeFilter.value;
+        const employees = [...new Set(jobs.map(job => String(job.employee || "").trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b));
+        employeeFilter.innerHTML = '<option value="all">All employees</option>' + employees.map(name => `<option value="${escapeHTML(name)}">${escapeHTML(name)}</option>`).join("");
+        if (!["all", ...employees].includes(selectedEmployee)) employeeFilter.value = "all";
+        else employeeFilter.value = selectedEmployee;
+        document.getElementById("employee-options").innerHTML = employees.map(name => `<option value="${escapeHTML(name)}"></option>`).join("");
+
+        document.getElementById("stat-all").textContent = jobs.length;
+        document.getElementById("stat-todo").textContent = jobs.filter(job => job.status === "To Do").length;
+        document.getElementById("stat-progress").textContent = jobs.filter(job => job.status === "In Progress").length;
+        document.getElementById("stat-complete").textContent = jobs.filter(job => job.status === "Complete").length;
+        document.getElementById("nav-total").textContent = jobs.length;
+
+        const visibleJobs = jobs.filter(job => {
+          const matchesQuery = !query || `${job.title} ${job.description || ""}`.toLowerCase().includes(query);
+          const matchesStatus = selectedStatus === "all" || job.status === selectedStatus;
+          const matchesEmployee = selectedEmployee === "all" || String(job.employee || "").trim() === selectedEmployee;
+          return matchesQuery && matchesStatus && matchesEmployee;
+        }).sort((a, b) => {
+          if (!a.dueDate) return b.dueDate ? 1 : 0;
+          if (!b.dueDate) return -1;
+          return a.dueDate.localeCompare(b.dueDate);
+        });
+        document.getElementById("visible-count").textContent = `${visibleJobs.length} ${visibleJobs.length === 1 ? "job" : "jobs"}`;
+
+        if (!visibleJobs.length) {
+          const hasFilters = Boolean(query || selectedStatus !== "all" || selectedEmployee !== "all");
+          list.innerHTML = `<div class="empty-state"><div class="empty-inner"><div class="empty-icon"><i data-lucide="${hasFilters ? "search-x" : "clipboard-list"}" width="20" height="20"></i></div><h3>${hasFilters ? "No jobs match those filters" : "Nothing on the board yet"}</h3><p>${hasFilters ? "Try a different search or adjust your filters." : "Add your first job or start with a few examples."}</p>${hasFilters ? "" : '<button class="button-secondary" id="seed-jobs" type="button"><i data-lucide="sparkles" width="14" height="14"></i>Seed sample data</button>'}</div></div>`;
+        } else {
+          list.innerHTML = `<div class="list-head" aria-hidden="true"><span>Job</span><span>Assigned to</span><span>Due date</span><span>Priority</span><span>Status</span><span></span></div>` + visibleJobs.map(job => {
+            const priority = PRIORITIES.includes(job.priority) ? job.priority : "Medium";
+            const status = STATUSES.includes(job.status) ? job.status : "To Do";
+            const statusClass = status === "To Do" ? "status-todo" : status === "In Progress" ? "status-progress" : "status-complete";
+            const notesCount = Array.isArray(job.notes) ? job.notes.length : 0;
+            return `<article class="job-row" data-job-id="${escapeHTML(job.id)}">
+              <div class="job-main"><div class="job-title">${escapeHTML(job.title)}</div><div class="job-description">${escapeHTML(job.description || "No description")}</div></div>
+              <div class="assignee"><span class="avatar">${escapeHTML(initials(job.employee))}</span><span class="assignee-name">${escapeHTML(job.employee || "Unassigned")}</span></div>
+              <div class="due-date${isOverdue(job) ? " overdue" : ""}">${isOverdue(job) ? "Overdue · " : ""}${escapeHTML(dateLabel(job.dueDate))}</div>
+              <div class="priority-cell"><span class="badge priority-${priority.toLowerCase()}">${escapeHTML(priority)}</span></div>
+              <div class="status-cell"><span class="badge ${statusClass}">${escapeHTML(status)}</span></div>
+              <div class="row-actions"><button class="icon-button" type="button" data-action="notes" aria-label="View or add notes" title="Notes${notesCount ? ` (${notesCount})` : ""}"><i data-lucide="${notesCount ? "notebook-pen" : "message-square-plus"}" width="15" height="15"></i><span class="note-count">${notesCount || ""}</span></button><button class="icon-button" type="button" data-action="edit" aria-label="Edit job" title="Edit job"><i data-lucide="pencil" width="15" height="15"></i></button><button class="icon-button delete" type="button" data-action="delete" aria-label="Delete job" title="Delete job"><i data-lucide="trash-2" width="15" height="15"></i></button></div>
+            </article>`;
+          }).join("");
+        }
+        if (window.lucide) window.lucide.createIcons();
+      }
+
+      function openDialog(job = null, focusNotes = false) {
+        form.reset();
+        const editing = Boolean(job);
+        document.getElementById("job-id").value = job?.id || "";
+        document.getElementById("dialog-title").textContent = editing ? (focusNotes ? "Job notes" : "Edit job") : "New job";
+        document.getElementById("dialog-description").textContent = editing ? (focusNotes ? "Keep the latest updates attached to this job." : "Update the details or add a note.") : "Add the details and keep the next step clear.";
+        document.getElementById("save-job").textContent = editing ? "Save changes" : "Create job";
+        document.getElementById("job-title-input").value = job?.title || "";
+        document.getElementById("job-description-input").value = job?.description || "";
+        document.getElementById("job-employee-input").value = job?.employee || "";
+        document.getElementById("job-due-input").value = job?.dueDate || "";
+        document.getElementById("job-priority-input").value = PRIORITIES.includes(job?.priority) ? job.priority : "Medium";
+        document.getElementById("job-status-input").value = STATUSES.includes(job?.status) ? job.status : "To Do";
+        document.getElementById("initial-note-field").hidden = editing;
+        document.getElementById("notes-history-field").hidden = !editing;
+        document.getElementById("job-note-edit-input").value = "";
+        document.getElementById("notes-history").innerHTML = editing && Array.isArray(job.notes) && job.notes.length
+          ? [...job.notes].reverse().map(note => `<div class="note-entry"><time>${escapeHTML(new Date(note.createdAt).toLocaleString())}</time>${escapeHTML(note.text)}</div>`).join("")
+          : '<div class="note-entry">No notes yet.</div>';
+        if (focusNotes) {
+          document.getElementById("job-title-input").readOnly = true;
+          document.getElementById("job-description-input").readOnly = true;
+          document.getElementById("job-employee-input").readOnly = true;
+          document.getElementById("job-due-input").readOnly = true;
+          document.getElementById("job-priority-input").disabled = true;
+          document.getElementById("job-status-input").disabled = true;
+          document.getElementById("notes-history-field").hidden = false;
+          document.getElementById("job-note-edit-input").focus();
+        } else {
+          ["job-title-input", "job-description-input", "job-employee-input", "job-due-input"].forEach(id => document.getElementById(id).readOnly = false);
+          ["job-priority-input", "job-status-input"].forEach(id => document.getElementById(id).disabled = false);
+        }
+        dialog.dataset.notesOnly = String(focusNotes);
+        dialog.showModal();
+        if (!focusNotes) document.getElementById("job-title-input").focus();
+        if (window.lucide) window.lucide.createIcons();
+      }
+
+      function closeDialog() {
+        dialog.close();
+        dialog.dataset.notesOnly = "false";
+        ["job-title-input", "job-description-input", "job-employee-input", "job-due-input"].forEach(id => document.getElementById(id).readOnly = false);
+        ["job-priority-input", "job-status-input"].forEach(id => document.getElementById(id).disabled = false);
+      }
+
+      function showToast(message) {
+        const region = document.getElementById("toast-region");
+        region.innerHTML = `<div class="toast"><i data-lucide="circle-check" width="16" height="16"></i>${escapeHTML(message)}</div>`;
+        if (window.lucide) window.lucide.createIcons();
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => region.innerHTML = "", 2800);
+      }
+
+      function seedSampleData() {
+        const today = new Date();
+        const due = offset => {
+          const date = new Date(today);
+          date.setDate(date.getDate() + offset);
+          return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+        };
+        const now = new Date().toISOString();
+        jobs = [
+          { id: crypto.randomUUID(), title: "Refresh client onboarding", description: "Review the welcome sequence and update the handoff checklist.", employee: "Maya Chen", dueDate: due(2), priority: "High", status: "In Progress", notes: [{ text: "Draft checklist is ready for review.", createdAt: now }] },
+          { id: crypto.randomUUID(), title: "Prepare monthly report", description: "Compile channel performance and add the key takeaways.", employee: "Jordan Lee", dueDate: due(5), priority: "Medium", status: "To Do", notes: [] },
+          { id: crypto.randomUUID(), title: "Update help center articles", description: "Revise the top five articles based on recent support questions.", employee: "Sam Rivera", dueDate: due(8), priority: "Low", status: "To Do", notes: [] },
+          { id: crypto.randomUUID(), title: "Review spring campaign assets", description: "Final check on copy, image sizes, and scheduled dates.", employee: "Maya Chen", dueDate: due(-1), priority: "Medium", status: "Complete", notes: [{ text: "Approved and sent to the campaign team.", createdAt: now }] }
+        ];
+        saveJobs();
+        render();
+        showToast("Sample jobs added");
+      }
+
+      document.getElementById("add-job").addEventListener("click", () => openDialog());
+      document.getElementById("close-dialog").addEventListener("click", closeDialog);
+      document.getElementById("cancel-dialog").addEventListener("click", closeDialog);
+      dialog.addEventListener("click", event => { if (event.target === dialog) closeDialog(); });
+      form.addEventListener("submit", event => {
+        event.preventDefault();
+        const id = document.getElementById("job-id").value;
+        const existing = jobs.find(job => job.id === id);
+        const now = new Date().toISOString();
+        const newNote = dialog.dataset.notesOnly === "true"
+          ? document.getElementById("job-note-edit-input").value.trim()
+          : existing ? document.getElementById("job-note-edit-input").value.trim() : document.getElementById("job-note-input").value.trim();
+        const job = existing ? { ...existing } : { id: crypto.randomUUID(), notes: [] };
+        if (dialog.dataset.notesOnly !== "true") {
+          job.title = document.getElementById("job-title-input").value.trim();
+          job.description = document.getElementById("job-description-input").value.trim();
+          job.employee = document.getElementById("job-employee-input").value.trim();
+          job.dueDate = document.getElementById("job-due-input").value;
+          job.priority = document.getElementById("job-priority-input").value;
+          job.status = document.getElementById("job-status-input").value;
+        }
+        if (newNote) job.notes = [...(Array.isArray(job.notes) ? job.notes : []), { text: newNote, createdAt: now }];
+        if (existing) jobs = jobs.map(item => item.id === id ? job : item);
+        else jobs.unshift(job);
+        if (!saveJobs()) return;
+        closeDialog();
+        render();
+        showToast(existing ? (newNote ? "Job and note updated" : "Job updated") : "Job created");
+      });
+      list.addEventListener("click", event => {
+        const seedButton = event.target.closest("#seed-jobs");
+        if (seedButton) { seedSampleData(); return; }
+        const actionButton = event.target.closest("[data-action]");
+        if (!actionButton) return;
+        const row = actionButton.closest("[data-job-id]");
+        const job = jobs.find(item => item.id === row?.dataset.jobId);
+        if (!job) return;
+        if (actionButton.dataset.action === "edit") openDialog(job);
+        if (actionButton.dataset.action === "notes") openDialog(job, true);
+        if (actionButton.dataset.action === "delete" && window.confirm(`Delete “${job.title}”? This cannot be undone.`)) {
+          jobs = jobs.filter(item => item.id !== job.id);
+          if (saveJobs()) { render(); showToast("Job deleted"); }
+        }
+      });
+      searchInput.addEventListener("input", render);
+      statusFilter.addEventListener("change", render);
+      employeeFilter.addEventListener("change", render);
+      const overviewNav = document.getElementById("overview-nav");
+      const jobsNav = document.getElementById("jobs-nav");
+      function setActiveNav(activeLink) {
+        document.querySelectorAll(".nav-link").forEach(link => {
+          const isActive = link === activeLink;
+          link.classList.toggle("active", isActive);
+          if (isActive) link.setAttribute("aria-current", "page");
+          else link.removeAttribute("aria-current");
+        });
+      }
+      overviewNav.addEventListener("click", () => {
+        setActiveNav(overviewNav);
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      });
+      jobsNav.addEventListener("click", () => {
+        setActiveNav(jobsNav);
+        statusFilter.value = "all";
+        employeeFilter.value = "all";
+        searchInput.value = "";
+        render();
+        document.getElementById("jobs-heading").scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+      document.getElementById("today-label").textContent = new Date().toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" }).toUpperCase();
+      render();
+    })();
+  </script>
+</body>
+</html>
